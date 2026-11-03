@@ -1,0 +1,843 @@
+COMPUTER NETWORKS LAB - QUESTION 2
+PROCEDURE + PYTHON 3 CODE
+================================
+
+IMPORTANT
+---------
+The Question 2 programs in your lab question bank are Python socket/raw-socket programs.
+This is a plain-text study file for reading in Command Prompt and uploading to GitHub.
+Save each program in a separate .py file before running it.
+
+GENERAL SOCKET PROGRAM PROCEDURE
+--------------------------------
+1. Identify whether the question asks for TCP or UDP.
+2. Write the server program first.
+3. Create a socket:
+   TCP: socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   UDP: socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+4. Server uses bind() to attach to an IP address and port.
+5. TCP server uses listen() and accept().
+6. UDP server uses recvfrom() and sendto().
+7. Client uses connect()/send()/recv() for TCP, or sendto()/recvfrom() for UDP.
+8. Run the server in one terminal and the client in another.
+9. Use 127.0.0.1 when both programs run on the same computer.
+
+------------------------------------------------------------
+1. TCP CHAT PROGRAM - CLIENT TERMINATES THE CHAT
+------------------------------------------------------------
+AIM:
+To develop a chat program using TCP sockets where the client can terminate the connection.
+
+PROCEDURE:
+1. Create a TCP socket in both client and server.
+2. Server binds to port 5000 and listens for a client.
+3. Client connects to the server.
+4. Client and server exchange messages.
+5. When the client types "exit", it sends the termination message and closes the connection.
+
+SERVER CODE (tcp_chat_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 5000))
+s.listen(1)
+print("Server waiting...")
+conn, addr = s.accept()
+print("Connected:", addr)
+
+while True:
+    msg = conn.recv(1024).decode()
+    if not msg or msg.lower() == "exit":
+        print("Client ended the chat")
+        break
+    print("Client:", msg)
+    reply = input("Server: ")
+    conn.send(reply.encode())
+
+conn.close()
+s.close()
+
+CLIENT CODE (tcp_chat_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 5000))
+
+while True:
+    msg = input("Client: ")
+    c.send(msg.encode())
+    if msg.lower() == "exit":
+        break
+    reply = c.recv(1024).decode()
+    print("Server:", reply)
+
+c.close()
+
+RUN:
+1. Terminal 1: python tcp_chat_server.py
+2. Terminal 2: python tcp_chat_client.py
+
+------------------------------------------------------------
+2. TCP CHAT PROGRAM - SERVER TERMINATES THE CHAT
+------------------------------------------------------------
+AIM:
+To develop a TCP chat application in which the server terminates the communication.
+
+PROCEDURE:
+1. Create a TCP server and client.
+2. Server binds, listens and accepts the client.
+3. Exchange messages using send() and recv().
+4. If the server types "exit", it sends the message and closes the connection.
+
+SERVER CODE (tcp_server_exit.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 5001))
+s.listen(1)
+print("Waiting for client...")
+conn, addr = s.accept()
+print("Connected:", addr)
+
+while True:
+    msg = conn.recv(1024).decode()
+    if not msg:
+        break
+    print("Client:", msg)
+
+    reply = input("Server: ")
+    conn.send(reply.encode())
+    if reply.lower() == "exit":
+        break
+
+conn.close()
+s.close()
+
+CLIENT CODE (tcp_client_exit.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 5001))
+
+while True:
+    msg = input("Client: ")
+    c.send(msg.encode())
+    reply = c.recv(1024).decode()
+    print("Server:", reply)
+    if not reply or reply.lower() == "exit":
+        break
+
+c.close()
+
+------------------------------------------------------------
+3. UDP CHAT PROGRAM - CLIENT TERMINATES THE CHAT
+------------------------------------------------------------
+AIM:
+To develop a UDP chat program where the client terminates the communication.
+
+PROCEDURE:
+1. Create UDP sockets using SOCK_DGRAM.
+2. Server binds to port 5002.
+3. Client sends a message using sendto().
+4. Server receives using recvfrom() and replies using sendto().
+5. Client types "exit" to terminate.
+
+SERVER CODE (udp_chat_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 5002))
+print("UDP server waiting...")
+
+while True:
+    msg, addr = s.recvfrom(1024)
+    msg = msg.decode()
+    print("Client:", msg)
+    if msg.lower() == "exit":
+        print("Client ended chat")
+        break
+    reply = input("Server: ")
+    s.sendto(reply.encode(), addr)
+
+s.close()
+
+CLIENT CODE (udp_chat_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server = ("127.0.0.1", 5002)
+
+while True:
+    msg = input("Client: ")
+    c.sendto(msg.encode(), server)
+    if msg.lower() == "exit":
+        break
+    data, addr = c.recvfrom(1024)
+    print("Server:", data.decode())
+
+c.close()
+
+------------------------------------------------------------
+4. UDP CHAT PROGRAM - SERVER TERMINATES THE CHAT
+------------------------------------------------------------
+AIM:
+To develop a UDP chat application in which the server terminates communication.
+
+PROCEDURE:
+1. Create UDP sockets.
+2. Server binds to port 5003.
+3. Client sends a message to the server.
+4. Server receives and replies.
+5. When the server types "exit", it sends exit to the client and stops.
+
+SERVER CODE (udp_server_exit.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 5003))
+print("UDP server waiting...")
+
+while True:
+    msg, addr = s.recvfrom(1024)
+    print("Client:", msg.decode())
+    reply = input("Server: ")
+    s.sendto(reply.encode(), addr)
+    if reply.lower() == "exit":
+        break
+
+s.close()
+
+CLIENT CODE (udp_client_exit.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server = ("127.0.0.1", 5003)
+
+while True:
+    msg = input("Client: ")
+    c.sendto(msg.encode(), server)
+    data, addr = c.recvfrom(1024)
+    print("Server:", data.decode())
+    if data.decode().lower() == "exit":
+        break
+
+c.close()
+
+------------------------------------------------------------
+5. TCP ECHO CLIENT-SERVER PROGRAM
+------------------------------------------------------------
+AIM:
+To send a message from a TCP client and return the same message from the server.
+
+PROCEDURE:
+1. Create a TCP socket in the server.
+2. Bind the server to port 5004 and listen.
+3. Client connects to the server and sends a message.
+4. Server receives the message and sends it back.
+5. Client displays the echoed message.
+
+SERVER CODE (tcp_echo_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 5004))
+s.listen(1)
+print("Server waiting...")
+conn, addr = s.accept()
+
+msg = conn.recv(1024).decode()
+print("Received:", msg)
+conn.send(msg.encode())
+
+conn.close()
+s.close()
+
+CLIENT CODE (tcp_echo_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 5004))
+msg = input("Enter message: ")
+c.send(msg.encode())
+print("Echo from server:", c.recv(1024).decode())
+c.close()
+
+------------------------------------------------------------
+6. TCP ECHO - DISPLAY CLIENT IP ADDRESS AND PORT
+------------------------------------------------------------
+AIM:
+To create a TCP echo application where the server displays the client's IP address and port.
+
+PROCEDURE:
+1. Create and bind a TCP server socket.
+2. Listen and accept a client connection.
+3. accept() returns the client's IP address and port number.
+4. Receive the hello message and display the client details.
+5. Send the same message back to the client.
+
+SERVER CODE (tcp_client_details_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 5005))
+s.listen(1)
+print("Waiting for client...")
+conn, addr = s.accept()
+
+print("Client IP:", addr[0])
+print("Client Port:", addr[1])
+
+msg = conn.recv(1024).decode()
+print("Message:", msg)
+conn.send(msg.encode())
+
+conn.close()
+s.close()
+
+CLIENT CODE (tcp_client_details_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 5005))
+c.send(b"Hello Server")
+print("Reply:", c.recv(1024).decode())
+c.close()
+
+------------------------------------------------------------
+7. TCP TIME-OF-DAY SERVER
+------------------------------------------------------------
+AIM:
+To create a TCP client-server program where the client requests the current time.
+
+PROCEDURE:
+1. Create a TCP server and bind to port 5006.
+2. Listen and accept the client request.
+3. Server obtains the current date and time.
+4. Server sends the time to the client.
+5. Client displays the received time.
+
+SERVER CODE (time_server.py):
+-------------------------------
+import socket
+from datetime import datetime
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("127.0.0.1", 5006))
+s.listen(1)
+print("Time server waiting...")
+conn, addr = s.accept()
+
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+conn.send(now.encode())
+
+conn.close()
+s.close()
+
+CLIENT CODE (time_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.connect(("127.0.0.1", 5006))
+print("Time from server:", c.recv(1024).decode())
+c.close()
+
+------------------------------------------------------------
+8. UDP MODULUS CALCULATOR
+------------------------------------------------------------
+AIM:
+To calculate the modulus of two numbers at the UDP server.
+
+PROCEDURE:
+1. Create a UDP server and bind to port 5007.
+2. Client reads two integers and sends them to the server.
+3. Server receives the numbers and calculates a % b.
+4. Server sends the result to the client.
+5. Client displays the result.
+
+SERVER CODE (udp_mod_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 5007))
+print("Modulus server waiting...")
+
+data, addr = s.recvfrom(1024)
+a, b = map(int, data.decode().split())
+if b != 0:
+    result = str(a % b)
+else:
+    result = "Cannot divide by zero"
+
+s.sendto(result.encode(), addr)
+s.close()
+
+CLIENT CODE (udp_mod_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+a = input("Enter first number: ")
+b = input("Enter second number: ")
+c.sendto((a + " " + b).encode(), ("127.0.0.1", 5007))
+data, addr = c.recvfrom(1024)
+print("Remainder:", data.decode())
+c.close()
+
+------------------------------------------------------------
+9. HAMMING (7,4) CODE - GENERATE, DETECT AND CORRECT
+------------------------------------------------------------
+AIM:
+To generate a (7,4) Hamming code, introduce a one-bit error, detect it and correct it.
+
+PROCEDURE:
+1. Read four data bits from the user.
+2. Place data bits in positions 3, 5, 6 and 7.
+3. Calculate parity bits at positions 1, 2 and 4 using even parity.
+4. Introduce an error at a position selected by the user.
+5. Calculate the syndrome at the receiver.
+6. If syndrome is non-zero, flip the indicated bit to correct the error.
+7. Display the corrected code and original data.
+
+CODE (hamming_74.py):
+-------------------------------
+data = input("Enter 4 data bits: ")
+if len(data) != 4 or any(bit not in "01" for bit in data):
+    print("Enter exactly four binary digits")
+    raise SystemExit
+
+d = [0] * 8
+d[3], d[5], d[6], d[7] = map(int, data)
+
+# Even parity bits
+d[1] = d[3] ^ d[5] ^ d[7]
+d[2] = d[3] ^ d[6] ^ d[7]
+d[4] = d[5] ^ d[6] ^ d[7]
+
+print("Generated Hamming code:", "".join(map(str, d[1:])))
+
+pos = int(input("Enter error position (1-7): "))
+if pos < 1 or pos > 7:
+    print("Invalid position")
+    raise SystemExit
+
+d[pos] ^= 1
+print("Code with error:", "".join(map(str, d[1:])))
+
+s1 = d[1] ^ d[3] ^ d[5] ^ d[7]
+s2 = d[2] ^ d[3] ^ d[6] ^ d[7]
+s4 = d[4] ^ d[5] ^ d[6] ^ d[7]
+syndrome = s1 + 2 * s2 + 4 * s4
+
+print("Error position:", syndrome if syndrome else "No error")
+if syndrome:
+    d[syndrome] ^= 1
+
+print("Corrected code:", "".join(map(str, d[1:])))
+print("Original data:", "".join(str(d[i]) for i in [3, 5, 6, 7]))
+
+------------------------------------------------------------
+10. HAMMING SENDER - READ TEXT, ENCODE AND SAVE TO CHANNEL
+------------------------------------------------------------
+AIM:
+To convert text into binary, add Hamming redundant bits and save the result in a file named channel.
+
+PROCEDURE:
+1. Read a text message.
+2. Convert each character into 8-bit binary.
+3. Divide the bits into groups of four.
+4. Encode each group using Hamming (7,4).
+5. Save the encoded bits in the file channel.
+
+CODE (hamming_sender.py):
+-------------------------------
+def encode(bits):
+    d = [0] * 8
+    d[3], d[5], d[6], d[7] = map(int, bits)
+    d[1] = d[3] ^ d[5] ^ d[7]
+    d[2] = d[3] ^ d[6] ^ d[7]
+    d[4] = d[5] ^ d[6] ^ d[7]
+    return "".join(map(str, d[1:]))
+
+message = input("Enter text: ")
+binary = "".join(format(ord(ch), "08b") for ch in message)
+encoded = ""
+
+for i in range(0, len(binary), 4):
+    encoded += encode(binary[i:i+4])
+
+with open("channel", "w") as f:
+    f.write(encoded)
+
+print("Encoded data saved in channel")
+
+------------------------------------------------------------
+11. HAMMING RECEIVER - READ CHANNEL, CORRECT AND DISPLAY TEXT
+------------------------------------------------------------
+AIM:
+To read the channel file, detect and correct a single-bit error and display the original text.
+
+PROCEDURE:
+1. Read encoded bits from the channel file.
+2. Divide the data into 7-bit blocks.
+3. Calculate the syndrome for each block.
+4. Correct the bit if an error is detected.
+5. Remove parity bits and collect the four data bits.
+6. Convert every eight recovered bits into a character.
+
+CODE (hamming_receiver.py):
+-------------------------------
+with open("channel", "r") as f:
+    encoded = f.read().strip()
+
+decoded_bits = ""
+
+for i in range(0, len(encoded), 7):
+    block = encoded[i:i+7]
+    if len(block) != 7:
+        continue
+
+    d = [0] + [int(x) for x in block]
+    s1 = d[1] ^ d[3] ^ d[5] ^ d[7]
+    s2 = d[2] ^ d[3] ^ d[6] ^ d[7]
+    s4 = d[4] ^ d[5] ^ d[6] ^ d[7]
+    error = s1 + 2*s2 + 4*s4
+
+    if error:
+        print("Error at bit position:", error)
+        d[error] ^= 1
+
+    decoded_bits += "".join(str(d[j]) for j in [3, 5, 6, 7])
+
+text = ""
+for i in range(0, len(decoded_bits), 8):
+    byte = decoded_bits[i:i+8]
+    if len(byte) == 8:
+        text += chr(int(byte, 2))
+
+print("Original text:", text)
+
+NOTE:
+To test error correction, manually change one 0 to 1 or 1 to 0 in the channel file.
+The receiver corrects one error in each 7-bit block.
+
+------------------------------------------------------------
+12. SLIDING WINDOW PROTOCOL - SENDER
+------------------------------------------------------------
+AIM:
+To implement sliding window flow control. Sender stores frames in Sender_Buffer.
+
+PROCEDURE:
+1. Read the window size and message.
+2. Treat each character as one frame.
+3. Add a frame number to each character.
+4. Write the frames to Sender_Buffer.
+5. The receiver reads the file and writes ACK/NACK responses.
+
+CODE (sliding_sender.py):
+-------------------------------
+window = int(input("Enter window size: "))
+message = input("Enter message: ")
+
+with open("Sender_Buffer", "w") as f:
+    for i, ch in enumerate(message):
+        f.write(f"{i}: {ch}\n")
+
+print("Frames saved in Sender_Buffer")
+print("Window size:", window)
+
+------------------------------------------------------------
+13. SLIDING WINDOW PROTOCOL - RECEIVER
+------------------------------------------------------------
+AIM:
+To read Sender_Buffer, check frame numbers and write ACK/NACK into Receiver_Buffer.
+
+PROCEDURE:
+1. Open Sender_Buffer.
+2. Read each frame and check its sequence number.
+3. If the frame number is expected, write ACK.
+4. Otherwise write NACK.
+5. Save the responses in Receiver_Buffer.
+
+CODE (sliding_receiver.py):
+-------------------------------
+expected = 0
+
+with open("Sender_Buffer", "r") as source, \
+     open("Receiver_Buffer", "w") as output:
+    for line in source:
+        number, data = line.strip().split(": ", 1)
+        number = int(number)
+
+        if number == expected:
+            output.write(f"ACK {number}\n")
+            print("Received:", data, "ACK", number)
+            expected += 1
+        else:
+            output.write(f"NACK {number}\n")
+            print("Incorrect frame:", number, "NACK")
+
+print("Responses saved in Receiver_Buffer")
+
+NOTE:
+This is the file-based classroom simulation described in the question. It is not a full network sliding-window implementation.
+
+------------------------------------------------------------
+14. PING PROGRAM - DISPLAY REPLY AND ROUND-TRIP TIME
+------------------------------------------------------------
+AIM:
+To develop a program that prints the reply message from the destination and round-trip time.
+
+PROCEDURE:
+1. Read the destination IP address or host name.
+2. Execute the system ping command.
+3. Display the reply and round-trip time returned by the operating system.
+
+CODE (ping_program.py):
+-------------------------------
+import subprocess
+import platform
+
+host = input("Enter destination: ")
+
+if platform.system().lower() == "windows":
+    command = ["ping", "-n", "4", host]
+else:
+    command = ["ping", "-c", "4", host]
+
+result = subprocess.run(command, capture_output=True, text=True)
+print(result.stdout)
+
+NOTE:
+This program calls the operating system's ping command; it does not construct ICMP packets itself.
+
+------------------------------------------------------------
+15. SIMULATE THE PING COMMAND
+------------------------------------------------------------
+AIM:
+To simulate the basic working of the ping command by sending and receiving messages.
+
+PROCEDURE:
+1. Read the destination host.
+2. Send ping requests using the operating system ping utility.
+3. Display the replies and time information.
+
+CODE:
+Use the same code given in PROGRAM 14 (ping_program.py).
+
+------------------------------------------------------------
+16. RAW SOCKET - TCP PACKET SNIFFER
+------------------------------------------------------------
+AIM:
+To capture TCP packets and display source port, destination port and flags.
+
+PROCEDURE:
+1. Create a raw socket.
+2. Capture incoming IP packets.
+3. Check whether the IP protocol field is TCP (6).
+4. Read the TCP header.
+5. Display source port, destination port and TCP flags.
+
+CODE (tcp_sniffer.py):
+-------------------------------
+import socket
+import struct
+
+s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+print("Capturing TCP packets... Press Ctrl+C to stop")
+
+while True:
+    packet, addr = s.recvfrom(65535)
+
+    ip_header = packet[:20]
+    iph = struct.unpack("!BBHHHBBH4s4s", ip_header)
+    ip_header_len = (iph[0] & 15) * 4
+
+    tcp_header = packet[ip_header_len:ip_header_len+20]
+    if len(tcp_header) < 20:
+        continue
+
+    tcph = struct.unpack("!HHLLBBHHH", tcp_header)
+    source_port = tcph[0]
+    dest_port = tcph[1]
+    flags = tcph[5]
+
+    print("Source Port:", source_port)
+    print("Destination Port:", dest_port)
+    print("Flags:", flags)
+    print("-------------------")
+
+------------------------------------------------------------
+17. RAW SOCKET - ICMP PACKET SNIFFER
+------------------------------------------------------------
+AIM:
+To sniff ICMP packets and display source IP, destination IP, TTL, type and code.
+
+PROCEDURE:
+1. Create a raw socket for ICMP.
+2. Capture packets.
+3. Read the IP header to get source IP, destination IP and TTL.
+4. Find the ICMP header after the IP header.
+5. Display ICMP type and code.
+
+CODE (icmp_sniffer.py):
+-------------------------------
+import socket
+import struct
+
+s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+print("Capturing ICMP packets... Press Ctrl+C to stop")
+
+while True:
+    packet, addr = s.recvfrom(65535)
+    if len(packet) < 28:
+        continue
+
+    iph = struct.unpack("!BBHHHBBH4s4s", packet[:20])
+    ihl = (iph[0] & 15) * 4
+
+    ttl = iph[5]
+    src = socket.inet_ntoa(iph[8])
+    dst = socket.inet_ntoa(iph[9])
+
+    icmp_type, icmp_code = struct.unpack("!BB", packet[ihl:ihl+2])
+
+    print("Source IP:", src)
+    print("Destination IP:", dst)
+    print("TTL:", ttl)
+    print("ICMP Type:", icmp_type)
+    print("ICMP Code:", icmp_code)
+    print("-------------------")
+
+------------------------------------------------------------
+18. RAW SOCKET - IP HEADER SNIFFER
+------------------------------------------------------------
+AIM:
+To capture packets and display IP header fields.
+
+PROCEDURE:
+1. Create a raw socket using AF_INET and SOCK_RAW.
+2. Capture IP packets.
+3. Unpack the IP header.
+4. Extract version, header length, TTL and protocol.
+5. Convert source and destination addresses into readable IP format.
+6. Display the fields.
+
+CODE (ip_sniffer.py):
+-------------------------------
+import socket
+import struct
+
+s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+print("Capturing IP packets... Press Ctrl+C to stop")
+
+while True:
+    packet, addr = s.recvfrom(65535)
+    if len(packet) < 20:
+        continue
+
+    iph = struct.unpack("!BBHHHBBH4s4s", packet[:20])
+
+    version = iph[0] >> 4
+    header_length = (iph[0] & 15) * 4
+    ttl = iph[5]
+    protocol = iph[6]
+    source = socket.inet_ntoa(iph[8])
+    destination = socket.inet_ntoa(iph[9])
+
+    print("Version:", version)
+    print("Header Length:", header_length)
+    print("TTL:", ttl)
+    print("Protocol:", protocol)
+    print("Source IP:", source)
+    print("Destination IP:", destination)
+    print("-------------------")
+
+------------------------------------------------------------
+19. SIMPLE UDP CLIENT-SERVER - CLIENT SENDS TEXT
+------------------------------------------------------------
+AIM:
+To create a UDP client-server program in which the client sends text and the server displays it.
+
+PROCEDURE:
+1. Create a UDP socket at the server.
+2. Bind the server to port 5008.
+3. Client sends a text message to the server using sendto().
+4. Server receives the message using recvfrom().
+5. Server displays the message.
+
+SERVER CODE (udp_message_server.py):
+-------------------------------
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 5008))
+
+print("Waiting for message...")
+data, addr = s.recvfrom(1024)
+print("Message from client:", data.decode())
+
+s.close()
+
+CLIENT CODE (udp_message_client.py):
+-------------------------------
+import socket
+
+c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+msg = input("Enter message: ")
+c.sendto(msg.encode(), ("127.0.0.1", 5008))
+print("Message sent")
+c.close()
+
+------------------------------------------------------------
+HOW TO RUN IN WINDOWS COMMAND PROMPT
+------------------------------------------------------------
+1. Install Python from https://www.python.org/ if it is not installed.
+2. Save the required code in a file ending with .py.
+3. Open Command Prompt.
+4. Move to the folder containing the files. Example:
+   cd Downloads
+5. Run the server first:
+   python tcp_echo_server.py
+6. Open a SECOND Command Prompt window.
+7. Run the client:
+   python tcp_echo_client.py
+8. For chat and client-server programs, keep both terminals open.
+9. For raw socket sniffers, run Command Prompt as Administrator. Raw socket support varies by Windows version; Linux may be required for some packet-capture tasks.
+10. Press Ctrl+C to stop a packet sniffer.
+
+HOW TO READ THIS FILE IN COMMAND PROMPT
+---------------------------------------
+If this file is saved as CN_Lab_Question_2.txt:
+
+   cd Downloads
+   type CN_Lab_Question_2.txt
+
+For page-by-page reading:
+
+   more CN_Lab_Question_2.txt
+
+Press SPACE for the next page and Q to quit.
+
+GITHUB UPLOAD
+-------------
+1. Create a repository named CN-Lab-Preparation.
+2. Click Add file -> Upload files.
+3. Upload CN_Lab_Question_2.txt.
+4. Click Commit changes.
+5. GitHub will display the text file directly in the browser.
+
+END OF QUESTION 2 NOTES
